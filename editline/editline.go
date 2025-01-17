@@ -17,8 +17,8 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/knz/bubbline/complete"
-	"github.com/knz/bubbline/editline/internal/textarea"
+	"github.com/jievince/bubbline/complete"
+	"github.com/jievince/bubbline/editline/internal/textarea"
 	rw "github.com/mattn/go-runewidth"
 	"github.com/muesli/reflow/wordwrap"
 )

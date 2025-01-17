@@ -7,8 +7,8 @@ import (
 	"log"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/knz/bubbline/editline"
-	"github.com/knz/bubbline/history"
+	"github.com/jievince/bubbline/editline"
+	"github.com/jievince/bubbline/history"
 )
 
 func main() {

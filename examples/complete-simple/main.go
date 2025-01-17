@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/knz/bubbline/computil"
-	"github.com/knz/bubbline/editline"
+	"github.com/jievince/bubbline/computil"
+	"github.com/jievince/bubbline/editline"
 )
 
 func main() {

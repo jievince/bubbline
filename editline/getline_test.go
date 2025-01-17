@@ -12,9 +12,9 @@ import (
 	"github.com/charmbracelet/bubbles/cursor"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cockroachdb/datadriven"
-	"github.com/knz/bubbline"
-	"github.com/knz/bubbline/computil"
-	"github.com/knz/bubbline/editline"
+	"github.com/jievince/bubbline"
+	"github.com/jievince/bubbline/computil"
+	"github.com/jievince/bubbline/editline"
 	"github.com/knz/catwalk"
 )
 

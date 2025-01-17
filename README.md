@@ -1,9 +1,9 @@
 # Bubbline
 
-[![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](https://pkg.go.dev/github.com/knz/bubbline)
-[![Build Status](https://github.com/knz/bubbline/workflows/build/badge.svg)](https://github.com/knz/bubbline/actions)
-[![Go ReportCard](https://goreportcard.com/badge/knz/bubbline)](https://goreportcard.com/report/knz/bubbline)
-[![Coverage Status](https://coveralls.io/repos/github/knz/bubbline/badge.svg)](https://coveralls.io/github/knz/bubbline)
+[![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](https://pkg.go.dev/github.com/jievince/bubbline)
+[![Build Status](https://github.com/jievince/bubbline/workflows/build/badge.svg)](https://github.com/jievince/bubbline/actions)
+[![Go ReportCard](https://goreportcard.com/badge/jievince/bubbline)](https://goreportcard.com/report/jievince/bubbline)
+[![Coverage Status](https://coveralls.io/repos/github/jievince/bubbline/badge.svg)](https://coveralls.io/github/jievince/bubbline)
 
 An input line editor for line-oriented terminal applications.
 
@@ -102,7 +102,7 @@ import (
     "log"
 
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/knz/bubbline"
+    "github.com/jievince/bubbline"
 )
 
 func main() {

@@ -7,9 +7,9 @@ import (
 	"os/signal"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/knz/bubbline/complete"
-	"github.com/knz/bubbline/editline"
-	"github.com/knz/bubbline/history"
+	"github.com/jievince/bubbline/complete"
+	"github.com/jievince/bubbline/editline"
+	"github.com/jievince/bubbline/history"
 )
 
 // Editor represents an input line editor.
