@@ -72,6 +72,7 @@ type KeyMap struct {
 	ReflowLine      key.Binding
 	ReflowAll       key.Binding
 	ExternalEdit    key.Binding
+	HideShowHelp    key.Binding
 }
 
 // DefaultKeyMap is the default set of key bindings.
@@ -79,23 +80,24 @@ var DefaultKeyMap = KeyMap{
 	KeyMap: textarea.DefaultKeyMap,
 
 	AlwaysNewline:   key.NewBinding(key.WithKeys("ctrl+o", "alt+enter"), key.WithHelp("C-o/M-⤶", "force newline")),
-	AlwaysComplete:  key.NewBinding(key.WithKeys("alt+f3"), key.WithHelp("M-f3", "force complete")),
+	AlwaysComplete:  key.NewBinding(key.WithKeys("ctrl+f3"), key.WithHelp("C-f3", "force complete")),
 	AutoComplete:    key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "try autocomplete")),
-	Interrupt:       key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("C-c", "clear/cancel")),
+	Interrupt:       key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("C-c", "cancel")),
 	SignalQuit:      key.NewBinding(key.WithKeys(`ctrl+\`)),
 	SignalTTYStop:   key.NewBinding(key.WithKeys("ctrl+z")),
 	Refresh:         key.NewBinding(key.WithKeys("ctrl+l"), key.WithHelp("C-l", "refresh display")),
-	EndOfInput:      key.NewBinding(key.WithKeys("ctrl+d"), key.WithHelp("C-d", "erase/stop")),
+	EndOfInput:      key.NewBinding(key.WithKeys("ctrl+d"), key.WithHelp("C-d", "exit")),
 	AbortSearch:     key.NewBinding(key.WithKeys("ctrl+g"), key.WithDisabled()),
-	SearchBackward:  key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("C-r", "search hist"), key.WithDisabled()),
-	HistoryPrevious: key.NewBinding(key.WithKeys("alt+p"), key.WithHelp("M-p", "prev history entry"), key.WithDisabled()),
-	HistoryNext:     key.NewBinding(key.WithKeys("alt+n"), key.WithHelp("M-n", "next history entry"), key.WithDisabled()),
-	HideShowPrompt:  key.NewBinding(key.WithKeys("alt+."), key.WithHelp("M-.", "hide/show prompt")),
-	MoreHelp:        key.NewBinding(key.WithKeys("alt+?"), key.WithHelp("M-?", "toggle key help")),
-	ReflowLine:      key.NewBinding(key.WithKeys("alt+q"), key.WithHelp("M-q", "reflow line")),
-	ReflowAll:       key.NewBinding(key.WithKeys("alt+Q", "alt+`"), key.WithHelp("M-S-q/M-`", "reflow all")),
+	SearchBackward:  key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("C-r", "search history"), key.WithDisabled()),
+	HistoryPrevious: key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("C-p", "prev history entry"), key.WithDisabled()),
+	HistoryNext:     key.NewBinding(key.WithKeys("ctrl+n"), key.WithHelp("C-n", "next history entry"), key.WithDisabled()),
+	HideShowPrompt:  key.NewBinding(key.WithKeys("ctrl+y"), key.WithHelp("C-y", "hide/show prompt")),
+	MoreHelp:        key.NewBinding(key.WithKeys("ctrl+x"), key.WithHelp("C-x", "toggle key help")),
+	ReflowLine:      key.NewBinding(key.WithKeys("ctrl+q"), key.WithHelp("C-q", "reflow line")),
+	ReflowAll:       key.NewBinding(key.WithKeys("ctrl+Q", "ctrl+`"), key.WithHelp("C-Q/C-`", "reflow all")),
 	Debug:           key.NewBinding(key.WithKeys("ctrl+_", "ctrl+@"), key.WithHelp("C-_/C-@", "debug mode"), key.WithDisabled()),
-	ExternalEdit:    key.NewBinding(key.WithKeys("alt+f2", "alt+2"), key.WithHelp("M-2/M-F2", "external edit")),
+	ExternalEdit:    key.NewBinding(key.WithKeys("ctrl+f2", "ctrl+2"), key.WithHelp("C-2/C-F2", "external edit")),
+	HideShowHelp:    key.NewBinding(key.WithKeys("ctrl+f3"), key.WithHelp("C-f3", "hide/show help line")),
 }
 
 // Model represents a widget that supports multi-line entry with
@@ -117,6 +119,10 @@ type Model struct {
 	// Placeholder is displayed when the editor is still empty.
 	// Only takes effect at Reset() or Focus().
 	Placeholder string
+
+	// ShowHelpLine controls whether to display the help line at the bottom.
+	// Default is true.
+	ShowHelpLine bool
 
 	// CheckInputComplete is called when the Enter key is pressed.  It
 	// determines whether a newline character should be added to the
@@ -254,6 +260,7 @@ func New(width, height int) *Model {
 		SearchPromptNotFound: "bck?",
 		SearchPromptInvalid:  "bck!",
 		ShowLineNumbers:      false,
+		ShowHelpLine:         true, // Default to showing help line
 		help:                 help.New(),
 		completions:          complete.New(),
 	}
@@ -866,9 +873,9 @@ func (m *Model) Update(imsg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := imsg.(type) {
 	case tea.KeyMsg:
 		// Reset valueSaved when user types or modifies input
-		if !msg.Alt && (msg.Type == tea.KeyRunes || 
-			msg.Type == tea.KeySpace || 
-			msg.Type == tea.KeyBackspace || 
+		if !msg.Alt && (msg.Type == tea.KeyRunes ||
+			msg.Type == tea.KeySpace ||
+			msg.Type == tea.KeyBackspace ||
 			msg.Type == tea.KeyDelete ||
 			msg.Type == tea.KeyCtrlH) {
 			m.hctrl.c.valueSaved = false
@@ -900,6 +907,10 @@ func (m *Model) Update(imsg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.KeyMap.MoreHelp):
 			m.help.ShowAll = !m.help.ShowAll
+			imsg = nil // consume message
+
+		case key.Matches(msg, m.KeyMap.HideShowHelp):
+			m.ShowHelpLine = !m.ShowHelpLine
 			imsg = nil // consume message
 
 		case key.Matches(msg, m.KeyMap.HideShowPrompt):
@@ -1098,7 +1109,7 @@ func (m Model) View() string {
 	if m.currentlySearching() {
 		buf.WriteByte('\n')
 		buf.WriteString(m.hctrl.pattern.View())
-	} else {
+	} else if m.ShowHelpLine {
 		buf.WriteByte('\n')
 		buf.WriteString(m.help.View(m))
 	}
@@ -1108,15 +1119,14 @@ func (m Model) View() string {
 // ShortHelp is part of the help.KeyMap interface.
 func (m Model) ShortHelp() []key.Binding {
 	k := m.KeyMap
-	kb := []key.Binding{
-		k.MoreHelp,
-	}
+	kb := []key.Binding{}
+	kb = append(kb,
+		k.AlwaysNewline, k.SearchBackward, k.HistoryPrevious, k.HistoryNext, k.Interrupt, k.EndOfInput, k.MoreHelp,
+	)
 	if m.showCompletions {
 		return append(kb, m.completions.ShortHelp()...)
 	}
-	return append(kb,
-		k.EndOfInput, k.Interrupt, k.SearchBackward, k.HideShowPrompt,
-	)
+	return kb
 }
 
 // FullHelp is part of the help.KeyMap interface.
