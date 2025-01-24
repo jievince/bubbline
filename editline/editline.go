@@ -555,9 +555,19 @@ func (m *Model) historyUp() (cmd tea.Cmd) {
 	if !m.hctrl.c.valueSaved {
 		m.saveValue()
 	}
-	m.hctrl.c.cursor--
-	entry := m.history[m.hctrl.c.cursor]
-	return tea.Batch(cmd, m.updateValue(entry, len(entry)))
+
+	// Use the original input as prefix for searching
+	prefix := m.hctrl.c.prevValue
+
+	// Search for history entries matching the prefix from the current position upwards
+	for i := m.hctrl.c.cursor - 1; i >= 0; i-- {
+		if strings.HasPrefix(m.history[i], prefix) {
+			m.hctrl.c.cursor = i
+			entry := m.history[i]
+			return tea.Batch(cmd, m.updateValue(entry, len(entry)))
+		}
+	}
+	return cmd
 }
 
 func (m *Model) historyDown() (cmd tea.Cmd) {
@@ -567,12 +577,24 @@ func (m *Model) historyDown() (cmd tea.Cmd) {
 	if !m.hctrl.c.valueSaved {
 		m.saveValue()
 	}
-	m.hctrl.c.cursor++
-	if m.hctrl.c.cursor >= len(m.history) {
+
+	// Use the original input as prefix for searching
+	prefix := m.hctrl.c.prevValue
+
+	// Search for history entries matching the prefix from the current position downwards
+	for i := m.hctrl.c.cursor + 1; i < len(m.history); i++ {
+		if strings.HasPrefix(m.history[i], prefix) {
+			m.hctrl.c.cursor = i
+			entry := m.history[i]
+			return tea.Batch(cmd, m.updateValue(entry, len(entry)))
+		}
+	}
+
+	// If no match is found downwards, restore to the original input
+	if m.hctrl.c.cursor == len(m.history)-1 {
 		return m.restoreValue()
 	}
-	entry := m.history[m.hctrl.c.cursor]
-	return tea.Batch(cmd, m.updateValue(entry, len(entry)))
+	return cmd
 }
 
 func (m *Model) autoComplete() (cmd tea.Cmd) {
@@ -843,6 +865,15 @@ func (m *Model) Update(imsg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := imsg.(type) {
 	case tea.KeyMsg:
+		// Reset valueSaved when user types or modifies input
+		if !msg.Alt && (msg.Type == tea.KeyRunes || 
+			msg.Type == tea.KeySpace || 
+			msg.Type == tea.KeyBackspace || 
+			msg.Type == tea.KeyDelete ||
+			msg.Type == tea.KeyCtrlH) {
+			m.hctrl.c.valueSaved = false
+		}
+
 		switch {
 		case key.Matches(msg, m.KeyMap.Debug):
 			m.debugMode = !m.debugMode
