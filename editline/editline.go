@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"syscall"
 
@@ -454,19 +453,20 @@ func (m *Model) incrementalSearch(nextMatch bool) (cmd tea.Cmd) {
 		if !m.CaseSensitiveSearch {
 			lentry = strings.ToLower(lentry)
 		}
-		for j := len(lentry) - len(pat) + 1; /* +1 to account for '*' */ j >= 0; j-- {
-			match, err := regexp.Match(pat, []byte(lentry[j:]))
-			if err != nil {
-				m.hctrl.pattern.Prompt = m.SearchPromptInvalid
-				return cmd
-			}
-			if match {
-				// It's a match!
-				m.hctrl.pattern.Prompt = m.SearchPrompt
-				m.hctrl.c.cursor = i
-				return m.updateValue(entry, j)
-			}
+		if pat == "*" {
+			m.hctrl.pattern.Prompt = m.SearchPrompt
+			m.hctrl.c.cursor = i
+			return m.updateValue(entry, len(entry))
 		}
+		subStr := strings.TrimSuffix(pat, "*")
+		idx := strings.Index(lentry, subStr)
+		if idx < 0 {
+			// No match found in this entry.
+			continue
+		}
+		m.hctrl.pattern.Prompt = m.SearchPrompt
+		m.hctrl.c.cursor = i
+		return m.updateValue(entry, idx)
 	}
 	if i < 0 {
 		// No match found.
